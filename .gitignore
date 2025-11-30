@@ -1,0 +1,32 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+Assets/Plugins/Editor/JetBrains*
+UserSettings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Visual Studio / Rider
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+.idea/
+
+# Unity cache
+MemoryCaptures/
+
+# Logs
+*.log
+
+# Builds
+*.apk
+*.aab
+*.exe
+*.app
