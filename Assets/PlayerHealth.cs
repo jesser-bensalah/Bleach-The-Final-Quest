@@ -12,6 +12,19 @@ public class PlayerHealth : MonoBehaviour
     public float invincibilityFlashDelay = 0.2f;
     public float invincibilityTimeAfterHit = 2f;
 
+
+    public static PlayerHealth instance;
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Debug.LogWarning("Il y a plus d'une instance de PlayerHealth dans la scène");
+            return;
+        }
+
+        instance = this;
+    }
     void Start()
     {
         currentHealth = maxHealth;
@@ -45,6 +58,20 @@ public class PlayerHealth : MonoBehaviour
             TakeDamage(10);
         }
     }
+    public void HealPlayer(int amount)
+    {
+        if ((currentHealth + amount) > maxHealth)
+        {
+            currentHealth = maxHealth;
+        }
+        else
+        {
+            currentHealth += amount;
+        }
+
+        healthbar.SetHealth(currentHealth);
+    }
+
 
     public void TakeDamage(int damage)
     {
