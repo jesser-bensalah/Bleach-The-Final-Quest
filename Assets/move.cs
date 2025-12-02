@@ -6,16 +6,33 @@ public class move : MonoBehaviour
 {
     public float speed, jumpForce;
     float Hmove;
-    Rigidbody2D rb;
-    SpriteRenderer spr;
-    Animator anim;
+    public Rigidbody2D rb;
+    public SpriteRenderer spr;
+    public Animator anim;
     bool jumping, grounded;
+    public Animator animator;
 
     // Variables pour l'attaque
     public bool isAttacking = false;
     public float attackRange = 1.5f;
     public LayerMask enemyLayer;
     public float attackDuration = 0.8f;
+
+    // Variable pour désactiver temporairement les collisions avec les ennemis
+    private bool disableEnemyCollisions = false;
+
+    public static move instance;
+    public Collider2D playerCollider;
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Debug.LogWarning("Il y a plus d'une instance de PlayerMouvement dans la scène");
+            return;
+        }
+
+        instance = this;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -25,6 +42,7 @@ public class move : MonoBehaviour
         anim = GetComponent<Animator>();
         jumping = false;
         grounded = false;
+        disableEnemyCollisions = false;
     }
 
     // Update is called once per frame
@@ -34,7 +52,7 @@ public class move : MonoBehaviour
         FlipPerso();
 
         // Attaque avec Z
-        if (Input.GetKeyDown(KeyCode.Z) && !isAttacking)
+        if (Input.GetKeyDown(KeyCode.Z) && !isAttacking && !PlayerHealth.instance.isDead)
         {
             StartCoroutine(Attack());
         }
@@ -54,7 +72,7 @@ public class move : MonoBehaviour
 
     public void GoJump()
     {
-        if (grounded)
+        if (grounded && !PlayerHealth.instance.isDead)
         {
             jumping = true;
         }
@@ -109,7 +127,7 @@ public class move : MonoBehaviour
         }
     }
 
-    // Séquence de mort de l'ennemi avec délai avant disparition
+    // Séquence de mort de l'ennemi avec délai avant disparition - CORRIGÉ
     IEnumerator EnemyDeathSequence(GameObject enemy)
     {
         if (enemy != null)
@@ -119,17 +137,25 @@ public class move : MonoBehaviour
             Collider2D enemyCollider = enemy.GetComponent<Collider2D>();
             SpriteRenderer enemySprite = enemy.GetComponent<SpriteRenderer>();
 
+            // IMMÉDIATEMENT: Désactiver les dégâts de l'ennemi
             if (patrolScript != null)
+            {
                 patrolScript.enabled = false;
+
+                // Désactiver le collider de dégâts si possible
+                if (enemyCollider != null)
+                {
+                    enemyCollider.enabled = false; // Désactive les collisions
+                }
+            }
 
             // Optionnel: Animation de mort ou effet visuel
             if (enemySprite != null)
             {
-                // Changer la couleur pour indiquer la mort
                 enemySprite.color = Color.red;
 
-                // Attendre un délai avant de faire disparaître
-                yield return new WaitForSeconds(3f); // Délai de mort
+                // RÉDUIRE le délai de mort (de 6s à 0.5s)
+                yield return new WaitForSeconds(0.5f); // CORRECTION ICI
 
                 // Faire disparaître progressivement
                 float fadeTime = 0.5f;
@@ -149,8 +175,8 @@ public class move : MonoBehaviour
             }
             else
             {
-                // Si pas de SpriteRenderer, attendre simplement le délai
-                yield return new WaitForSeconds(2f);
+                // Si pas de SpriteRenderer, attendre simplement le délai réduit
+                yield return new WaitForSeconds(0.5f); // CORRECTION ICI
             }
 
             // Désactiver définitivement l'ennemi après le délai
@@ -164,6 +190,13 @@ public class move : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Ne pas bouger si mort
+        if (PlayerHealth.instance.isDead)
+        {
+            rb.velocity = new Vector2(0, rb.velocity.y);
+            return;
+        }
+
         // VOTRE SYSTÈME DE SAUT ORIGINAL
         rb.velocity = new Vector2(Hmove * speed, rb.velocity.y);
 
@@ -194,6 +227,32 @@ public class move : MonoBehaviour
         else if (Hmove > 0)
         {
             spr.flipX = false;
+        }
+    }
+
+    // Méthode pour désactiver temporairement les collisions avec les ennemis (optionnel)
+    public void DisableEnemyCollisions(float duration)
+    {
+        if (!disableEnemyCollisions)
+        {
+            StartCoroutine(DisableEnemyCollisionsCoroutine(duration));
+        }
+    }
+
+    IEnumerator DisableEnemyCollisionsCoroutine(float duration)
+    {
+        disableEnemyCollisions = true;
+        yield return new WaitForSeconds(duration);
+        disableEnemyCollisions = false;
+    }
+
+    // Modifier la détection de collision pour ignorer les collisions pendant l'attaque
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        // Ignorer les collisions avec les ennemis si désactivé
+        if (disableEnemyCollisions && collision.gameObject.CompareTag("Enemy"))
+        {
+            Physics2D.IgnoreCollision(GetComponent<Collider2D>(), collision.collider, true);
         }
     }
 

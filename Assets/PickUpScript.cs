@@ -12,7 +12,7 @@ public class PickUpScript : MonoBehaviour
         {
             //AudioManager.instance.PlayClipAt(sound, transform.position);
             Inventory.instance.AddCoins(1);
-            //CurrentSceneManager.instance.coinsPickedUpInThisSceneCount++;
+            CurrentSceneManager.instance.coinsPickedUpInThisSceneCount++;
             Destroy(gameObject);
         }
     }
