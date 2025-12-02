@@ -1,89 +1,61 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Ilumisoft.HealthSystem.UI
+public class Healthbar : MonoBehaviour
 {
-    [AddComponentMenu("Health System/UI/Healthbar")]
-    public class Healthbar : MonoBehaviour
+    public Slider slider;
+    public Gradient gradient;
+    public Image fill;
+
+    private void Start()
     {
-        [field:SerializeField]
-        public HealthComponent Health { get; set; }
-
-        [SerializeField]
-        Canvas canvas;
-
-        [SerializeField]
-        Image fillImage;
-
-        [SerializeField, Tooltip("Whether the healthbar should be hidden when health is empty")]
-        bool hideEmpty = false;
-
-        [SerializeField, Tooltip("Makes the healthbar being aligned with the camera")]
-        bool alignWithCamera = false;
-
-        [SerializeField, Min(0.1f), Tooltip("Controls how fast changes will be animated in points/second")]
-        float changeSpeed = 100;
-
-        float currentValue;
-
-        protected virtual void Reset()
+        if (slider == null)
         {
-            if (Health == null)
+            slider = GetComponent<Slider>();
+            if (slider == null)
             {
-                Health = GetComponentInParent<HealthComponent>();
+                Debug.LogError("Slider not found on Healthbar!");
+                enabled = false;
+                return;
             }
         }
 
-        private void Start()
+        // CORRECTION: Vérifier si fill existe
+        if (fill == null && slider != null)
         {
-            currentValue = Health.CurrentHealth;
-        }
-
-        private void Update()
-        {
-            if (alignWithCamera)
+            fill = slider.fillRect?.GetComponent<Image>();
+            if (fill == null)
             {
-                AlignWithCamera();
+                Debug.LogWarning("Fill image not found on Healthbar!");
             }
-
-            currentValue = Mathf.MoveTowards(currentValue, Health.CurrentHealth, Time.deltaTime * changeSpeed);
-            
-            UpdateFillbar();
-            UpdateVisibility();
         }
+    }
 
-        private void AlignWithCamera()
+    public void SetMaxHealth(int health)
+    {
+        if (slider != null)
         {
-            transform.forward = Camera.main.transform.forward;
-        }
+            slider.maxValue = health;
+            slider.value = health;
 
-        void UpdateFillbar()
-        {
-            // Update the fill amount
-            float value = Mathf.InverseLerp(0, Health.MaxHealth, currentValue);
-
-            fillImage.fillAmount = value;
-        }
-
-        void UpdateVisibility()
-        {
-            float value = fillImage.fillAmount;
-
-            if (canvas != null)
+            // CORRECTION: Vérifier si fill existe avant de l'utiliser
+            if (fill != null && gradient != null)
             {
-                // Hide if empty
-                if (Mathf.Approximately(value, 0))
-                {
-                    if (hideEmpty && canvas.gameObject.activeSelf)
-                    {
-                        canvas.gameObject.SetActive(false);
-                    }
-                }
-                // Make sure the canvas is enabled if health is not empty
-                else if (value > 0 && canvas.gameObject.activeSelf == false)
-                {
-                    canvas.gameObject.SetActive(true);
-                }
+                fill.color = gradient.Evaluate(1f);
+            }
+        }
+    }
+
+    public void SetHealth(int health)
+    {
+        if (slider != null)
+        {
+            slider.value = health;
+
+            // CORRECTION: Vérifier si fill et gradient existent avant de les utiliser
+            if (fill != null && gradient != null)
+            {
+                fill.color = gradient.Evaluate(slider.normalizedValue);
             }
         }
     }

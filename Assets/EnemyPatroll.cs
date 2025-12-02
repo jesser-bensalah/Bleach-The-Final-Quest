@@ -7,9 +7,11 @@ public class EnemyPatrolWithWait : MonoBehaviour
     public Transform waypoint1;
     public Transform waypoint2;
     public float waitTime = 2f;
+    public int damageOnCollision = 20;
 
     private SpriteRenderer spr;
     private bool movingToWaypoint2 = true;
+    private bool isPatrolling = true;
 
     void Start()
     {
@@ -21,32 +23,43 @@ public class EnemyPatrolWithWait : MonoBehaviour
             CreateDefaultWaypoints();
         }
 
-        StartCoroutine(PatrolRoutine());
+        if (waypoint1 != null && waypoint2 != null)
+        {
+            StartCoroutine(PatrolRoutine());
+        }
+        else
+        {
+            Debug.LogError("Waypoints are still null after creation!");
+        }
     }
 
     IEnumerator PatrolRoutine()
     {
-        while (true)
+        while (isPatrolling)
         {
-            // Déterminer la cible actuelle
+            if (waypoint1 == null || waypoint2 == null) yield break;
+
             Transform currentTarget = movingToWaypoint2 ? waypoint2 : waypoint1;
+            if (currentTarget == null) yield break;
 
             // Flip selon la direction
-            spr.flipX = (currentTarget.position.x < transform.position.x);
+            if (spr != null)
+            {
+                spr.flipX = (currentTarget.position.x < transform.position.x);
+            }
 
             // Se déplacer vers la cible
             while (Vector3.Distance(transform.position, currentTarget.position) > 0.3f)
             {
+                if (currentTarget == null) yield break;
+
                 Vector3 direction = (currentTarget.position - transform.position).normalized;
-                direction.y = 0; // Bloquer Y
+                direction.y = 0;
                 transform.Translate(direction * speed * Time.deltaTime, Space.World);
                 yield return null;
             }
 
-            // Attendre au waypoint
             yield return new WaitForSeconds(waitTime);
-
-            // Changer de direction
             movingToWaypoint2 = !movingToWaypoint2;
         }
     }
@@ -67,6 +80,28 @@ public class EnemyPatrolWithWait : MonoBehaviour
             GameObject wp2 = new GameObject("Waypoint2");
             wp2.transform.position = new Vector3(pos.x + 3f, pos.y, pos.z);
             waypoint2 = wp2.transform;
+        }
+    }
+
+    // DÉTECTION DE COLLISION SUR L'ENNEMI
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        Debug.Log($" Collision ennemi avec: {collision.gameObject.name} - Tag: {collision.gameObject.tag}");
+
+        if (collision.transform.CompareTag("Player"))
+        {
+            Debug.Log("Joueur touché par l'ennemi!");
+
+            PlayerHealth playerHealth = collision.transform.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                Debug.Log($" Inflige {damageOnCollision} dégâts");
+                playerHealth.TakeDamage(damageOnCollision);
+            }
+            else
+            {
+                Debug.LogError(" PlayerHealth non trouvé sur le joueur!");
+            }
         }
     }
 
