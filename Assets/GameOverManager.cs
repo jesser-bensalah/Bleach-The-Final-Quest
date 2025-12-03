@@ -60,6 +60,7 @@ public class GameOverManager : MonoBehaviour
 
     public void MainMenuButton()
     {
+        DontDestroyOnLoadScene.instance.RemoveFromDontDestroyOnLoad();
         SceneManager.LoadScene("MainMenu");
     }
 
