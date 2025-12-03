@@ -23,6 +23,7 @@ public class move : MonoBehaviour
 
     public static move instance;
     public Collider2D playerCollider;
+
     private void Awake()
     {
         if (instance != null)
@@ -43,6 +44,39 @@ public class move : MonoBehaviour
         jumping = false;
         grounded = false;
         disableEnemyCollisions = false;
+
+        // Assignation automatique du collider si non assigné
+        if (playerCollider == null)
+        {
+            playerCollider = GetComponent<Collider2D>();
+            if (playerCollider == null)
+            {
+                // Chercher tous les colliders et prendre le premier actif
+                Collider2D[] allColliders = GetComponents<Collider2D>();
+                foreach (Collider2D col in allColliders)
+                {
+                    if (col.enabled)
+                    {
+                        playerCollider = col;
+                        break;
+                    }
+                }
+
+                if (playerCollider == null && allColliders.Length > 0)
+                {
+                    playerCollider = allColliders[0];
+                }
+            }
+
+            if (playerCollider != null)
+            {
+                Debug.Log($"Collider assigné automatiquement: {playerCollider.GetType().Name}");
+            }
+            else
+            {
+                Debug.LogWarning("Aucun Collider2D trouvé sur le joueur!");
+            }
+        }
     }
 
     // Update is called once per frame

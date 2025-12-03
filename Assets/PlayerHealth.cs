@@ -54,11 +54,11 @@ public class PlayerHealth : MonoBehaviour
     {
         if (isDead) return;
 
-        Debug.Log($" Collision joueur avec: {collision.gameObject.name} - Tag: {collision.gameObject.tag}");
+        Debug.Log($"Collision joueur avec: {collision.gameObject.name} - Tag: {collision.gameObject.tag}");
 
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            Debug.Log(" Ennemi détecté par le joueur!");
+            Debug.Log("Ennemi détecté par le joueur!");
             TakeDamage(10);
         }
     }
@@ -84,7 +84,7 @@ public class PlayerHealth : MonoBehaviour
         if (!isInvincible && !isDead)
         {
             currentHealth -= damage;
-            Debug.Log($" Santé: {currentHealth}/{maxHealth} (-{damage})");
+            Debug.Log($"Santé: {currentHealth}/{maxHealth} (-{damage})");
 
             // Activation de l'invincibilité
             isInvincible = true;
@@ -106,7 +106,7 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            Debug.Log(" Dégâts évités - Joueur invincible ou mort");
+            Debug.Log("Dégâts évités - Joueur invincible ou mort");
         }
     }
 
@@ -181,7 +181,7 @@ public class PlayerHealth : MonoBehaviour
             healthbar.SetHealth(currentHealth);
         }
 
-        Debug.Log($" Soin: {currentHealth}/{maxHealth} (+{healAmount})");
+        Debug.Log($"Soin: {currentHealth}/{maxHealth} (+{healAmount})");
     }
 
     public IEnumerator InvincibilityFlash()
@@ -210,12 +210,14 @@ public class PlayerHealth : MonoBehaviour
         {
             graphics.color = new Color(1f, 1f, 1f, 1f);
         }
-        Debug.Log(" Invincibilité terminée");
+        Debug.Log("Invincibilité terminée");
     }
 
     // SUPPRIMER la première méthode Respawn() et garder celle-ci
     public void Respawn()
     {
+        Debug.Log($"Respawn appelé. move.instance: {move.instance}, playerCollider: {move.instance?.playerCollider}");
+
         isDead = false;
         isInvincible = false;
         currentHealth = maxHealth;
@@ -230,10 +232,31 @@ public class PlayerHealth : MonoBehaviour
             move.instance.enabled = true;
 
             // Réactiver le Rigidbody
-            move.instance.rb.bodyType = RigidbodyType2D.Dynamic;
+            if (move.instance.rb != null)
+            {
+                move.instance.rb.bodyType = RigidbodyType2D.Dynamic;
+                move.instance.rb.velocity = Vector2.zero;
+            }
 
-            // Réactiver le collider si nécessaire
-            // move.instance.playerCollider.enabled = true;
+            // Réactiver le collider avec vérifications supplémentaires
+            if (move.instance.playerCollider != null)
+            {
+                move.instance.playerCollider.enabled = true;
+            }
+            else
+            {
+                // Recherche plus approfondie du collider
+                Collider2D foundCollider = move.instance.GetComponent<Collider2D>();
+                if (foundCollider != null)
+                {
+                    foundCollider.enabled = true;
+                    move.instance.playerCollider = foundCollider; // Mettre à jour la référence
+                }
+                else
+                {
+                    Debug.LogWarning("Impossible de trouver un collider sur le joueur lors du respawn");
+                }
+            }
 
             // Réinitialiser l'animator
             Animator playerAnimator = move.instance.GetComponent<Animator>();
@@ -241,15 +264,27 @@ public class PlayerHealth : MonoBehaviour
             {
                 playerAnimator.Rebind();
                 playerAnimator.Play("Idle");
-
-                // Optionnel: Déclencher une animation de respawn si elle existe
-                // playerAnimator.SetTrigger("Respawn");
+                // Réinitialiser tous les paramètres
+                playerAnimator.SetBool("IsAttacking", false);
+                playerAnimator.SetFloat("Speed", 0f);
             }
+
+            // Réactiver aussi le SpriteRenderer
+            if (move.instance.spr != null)
+            {
+                move.instance.spr.enabled = true;
+            }
+        }
+        else
+        {
+            Debug.LogError("move.instance est null lors du respawn!");
         }
 
         if (graphics != null)
         {
             graphics.color = new Color(1f, 1f, 1f, 1f);
         }
+
+        Debug.Log("Respawn complet");
     }
 }

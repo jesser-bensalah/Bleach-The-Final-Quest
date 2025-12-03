@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameOverManager : MonoBehaviour
 {
@@ -20,7 +21,7 @@ public class GameOverManager : MonoBehaviour
 
     public void OnPlayerDeath()
     {
-        if(CurrentSceneManager.instance.isPlayerPresentByDefault)
+        if (CurrentSceneManager.instance.isPlayerPresentByDefault)
         {
             DontDestroyOnLoadScene.instance.RemoveFromDontDestroyOnLoad();
         }
@@ -29,10 +30,32 @@ public class GameOverManager : MonoBehaviour
 
     public void RetryButton()
     {
-        Inventory.instance.RemoveCoins(CurrentSceneManager.instance.coinsPickedUpInThisSceneCount);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        PlayerHealth.instance.Respawn();
+        // Désactiver d'abord l'UI
         gameOverUI.SetActive(false);
+
+        // Retirer les pièces si nécessaire
+        if (Inventory.instance != null && CurrentSceneManager.instance != null)
+        {
+            Inventory.instance.RemoveCoins(CurrentSceneManager.instance.coinsPickedUpInThisSceneCount);
+        }
+
+        // Recharger la scène
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        // Attendre un peu puis appeler Respawn
+        StartCoroutine(RespawnAfterSceneLoad());
+    }
+
+    private IEnumerator RespawnAfterSceneLoad()
+    {
+        // Attendre la fin du chargement de la scène
+        yield return new WaitForSeconds(0.1f);
+
+        // Vérifier si PlayerHealth existe
+        if (PlayerHealth.instance != null)
+        {
+            PlayerHealth.instance.Respawn();
+        }
     }
 
     public void MainMenuButton()
