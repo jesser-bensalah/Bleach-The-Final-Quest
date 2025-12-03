@@ -13,6 +13,7 @@ public class PlayerHealth : MonoBehaviour
     public float invincibilityTimeAfterHit = 2f;
     public bool isDead = false;
 
+    public AudioClip hitSound; 
     public static PlayerHealth instance;
 
     private void Awake()
@@ -83,6 +84,7 @@ public class PlayerHealth : MonoBehaviour
     {
         if (!isInvincible && !isDead)
         {
+            AudioManager.instance.PlayClipAt(hitSound, transform.position);
             currentHealth -= damage;
             Debug.Log($"Santé: {currentHealth}/{maxHealth} (-{damage})");
 

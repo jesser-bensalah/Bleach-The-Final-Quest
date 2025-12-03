@@ -24,13 +24,16 @@ public class AudioManager : MonoBehaviour
 
     void Start()
     {
-        audioSource.clip = playlist[0];
-        audioSource.Play();
+        if (playlist.Length > 0 && audioSource != null)
+        {
+            audioSource.clip = playlist[0];
+            audioSource.Play();
+        }
     }
 
     void Update()
     {
-        if (!audioSource.isPlaying)
+        if (audioSource != null && !audioSource.isPlaying && playlist.Length > 0)
         {
             PlayNextSong();
         }
@@ -38,6 +41,8 @@ public class AudioManager : MonoBehaviour
 
     void PlayNextSong()
     {
+        if (playlist.Length == 0) return;
+
         musicIndex = (musicIndex + 1) % playlist.Length;
         audioSource.clip = playlist[musicIndex];
         audioSource.Play();
@@ -45,11 +50,29 @@ public class AudioManager : MonoBehaviour
 
     public AudioSource PlayClipAt(AudioClip clip, Vector3 pos)
     {
+        if (clip == null)
+        {
+            Debug.LogWarning("AudioClip est null dans PlayClipAt");
+            return null;
+        }
+
+        // Crée un GameObject caché pour éviter l'affichage d'image
         GameObject tempGO = new GameObject("TempAudio");
         tempGO.transform.position = pos;
+
+        // IMPORTANT: Cache complètement le GameObject
+        tempGO.hideFlags = HideFlags.HideAndDontSave;
+
         AudioSource audioSource = tempGO.AddComponent<AudioSource>();
         audioSource.clip = clip;
-        audioSource.outputAudioMixerGroup = soundEffectMixer;
+
+        // Vérifier si le mixer est assigné
+        if (soundEffectMixer != null)
+            audioSource.outputAudioMixerGroup = soundEffectMixer;
+
+        // Désactive spatialBlend pour éviter les effets 3D
+        audioSource.spatialBlend = 0f;
+
         audioSource.Play();
         Destroy(tempGO, clip.length);
         return audioSource;
